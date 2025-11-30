@@ -9,8 +9,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -21,40 +26,68 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.app_ticket.Models.Movie
 import com.example.app_ticket.View.MovieViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
     viewModel: MovieViewModel,
     onNavigateToSaved: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-        Button(
-            onClick = onNavigateToSaved,
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .fillMaxSize()
+                .padding(padding)
+                .padding(8.dp)
         ) {
-            Text("Ver Filmes Guardados")
-        }
 
-        MovieGrid(viewModel = viewModel)
+            Button(
+                onClick = {
+                    viewModel.loadSavedMovies()
+                    println("Filmes guardados: ${viewModel.savedMovies.size}")
+                    onNavigateToSaved()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ver Filmes Guardados")
+            }
+
+            MovieGrid(
+                viewModel = viewModel,
+                onShowMessage = { message ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message)
+                    }
+                }
+            )
+        }
     }
 
 }
 
 @Composable
-fun MovieGrid(viewModel: MovieViewModel) {
+fun MovieGrid(
+    viewModel: MovieViewModel,
+    onShowMessage: (String) -> Unit
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize()
     ) {
         items(viewModel.movies) { movie ->
             MovieCard(
                 movie = movie,
-                onSave = { viewModel.saveMovie(it) }
+                onSave = {
+                    viewModel.saveMovie(it)
+                    onShowMessage("Filme guardado com sucesso!")
+                }
             )
         }
     }
@@ -65,6 +98,8 @@ fun MovieCard(
     movie: Movie,
     onSave: (Movie) -> Unit
 ) {
+    val posterUrl = movie.poster_path?.let { "https://image.tmdb.org/t/p/w500$it" }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -72,59 +107,63 @@ fun MovieCard(
             .clip(RoundedCornerShape(16.dp)),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.LightGray)
-                .padding(8.dp)
-        ) {
-            AsyncImage(
-                model = "[https://image.tmdb.org/t/p/w500${movie.poster_path}](https://image.tmdb.org/t/p/w500${movie.poster_path})",
-                contentDescription = movie.title,
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            posterUrl?.let {
+                AsyncImage(
+                    model = it,
+                    contentDescription = movie.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } ?: Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
+                    .fillMaxSize()
+                    .background(Color.Gray)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = movie.title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "⭐ ${movie.vote_average}",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = movie.overview,
-                fontSize = 12.sp,
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .weight(1f),
-                maxLines = 3
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Botão de salvar
-            Button(
-                onClick = { onSave(movie) },
-                modifier = Modifier.fillMaxWidth()
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .padding(12.dp)
             ) {
-                Text("Guardar")
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = movie.title,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "⭐ ${movie.vote_average}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Yellow
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = movie.overview,
+                            fontSize = 12.sp,
+                            color = Color.White,
+                            maxLines = 3
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { onSave(movie) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Guardar")
+                        }
+                    }
+                }
             }
         }
     }
