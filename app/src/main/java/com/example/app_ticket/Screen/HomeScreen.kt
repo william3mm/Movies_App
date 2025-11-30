@@ -6,13 +6,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,9 +54,7 @@ fun HomeScreen(
             MovieGrid(
                 viewModel = viewModel,
                 onShowMessage = { message ->
-                    scope.launch {
-                        snackbarHostState.showSnackbar(message)
-                    }
+                    scope.launch { snackbarHostState.showSnackbar(message) }
                 }
             )
         }
@@ -84,10 +76,8 @@ fun MovieGrid(
         items(viewModel.movies) { movie ->
             MovieCard(
                 movie = movie,
-                onSave = {
-                    viewModel.saveMovie(it)
-                    onShowMessage("Filme guardado com sucesso!")
-                }
+                onSave = { viewModel.saveMovie(it) },
+                onShowMessage = onShowMessage
             )
         }
     }
@@ -96,9 +86,10 @@ fun MovieGrid(
 @Composable
 fun MovieCard(
     movie: Movie,
-    onSave: (Movie) -> Unit
+    onSave: (Movie) -> Unit,
+    onShowMessage: (String) -> Unit
 ) {
-    val posterUrl = movie.poster_path?.let { "https://image.tmdb.org/t/p/w500$it" }
+    val posterUrl = movie.poster_path?.let { "[https://image.tmdb.org/t/p/w500$it](https://image.tmdb.org/t/p/w500$it)" }
 
     Card(
         modifier = Modifier
@@ -157,7 +148,14 @@ fun MovieCard(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
-                            onClick = { onSave(movie) },
+                            onClick = {
+                                try {
+                                    onSave(movie)
+                                    onShowMessage("Filme guardado com sucesso!")
+                                } catch (e: Exception) {
+                                    onShowMessage("Erro ao guardar o filme: ${e.message}")
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Guardar")
