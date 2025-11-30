@@ -9,11 +9,7 @@ import com.example.app_ticket.Models.Movie
 import com.example.app_ticket.Repository.MovieRepository
 import kotlinx.coroutines.launch
 
-
-
-class MovieViewModel(
-    private val repository: MovieRepository = MovieRepository()
-) : ViewModel() {
+class MovieViewModel : ViewModel() {
 
     var movies by mutableStateOf(listOf<Movie>())
         private set
@@ -28,22 +24,21 @@ class MovieViewModel(
 
     fun loadMovies() {
         viewModelScope.launch {
-            movies = repository.getMovies()
+            movies = MovieRepository.getMovies()
         }
     }
 
     fun loadSavedMovies() {
-        savedMovies = repository.getSavedMovies()
+        savedMovies = MovieRepository.getSavedMovies().toList()
     }
 
     fun saveMovie(movie: Movie) {
-        repository.saveMovie(movie)
+        MovieRepository.saveMovie(movie)
         loadSavedMovies()
     }
 
     fun removeMovie(movie: Movie) {
-        repository.removeMovie(movie)
+        MovieRepository.removeMovie(movie)
         loadSavedMovies()
     }
-
 }

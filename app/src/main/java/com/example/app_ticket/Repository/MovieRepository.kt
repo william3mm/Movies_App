@@ -7,22 +7,23 @@ import com.example.app_ticket.Service.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class MovieRepository {
+
+object MovieRepository {
 
     private val savedMovies = mutableListOf<Movie>()
     private val apiKey = Constants.API_KEY
 
-    suspend fun getMovies(): List<Movie> {
-        return try {
-            withContext(Dispatchers.IO) {
-                val response: MovieResponse = RetrofitInstance.api.getPopularMovies(apiKey)
-                response.results
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
+
+    suspend fun getMovies(): List<Movie> = try {
+        withContext(Dispatchers.IO) {
+            val response: MovieResponse = RetrofitInstance.api.getPopularMovies(apiKey)
+            response.results
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        emptyList()
     }
+
 
     fun saveMovie(movie: Movie) {
         if (!savedMovies.contains(movie)) {
@@ -30,12 +31,11 @@ class MovieRepository {
         }
     }
 
+
     fun removeMovie(movie: Movie) {
         savedMovies.remove(movie)
     }
 
-    fun getSavedMovies(): List<Movie> {
-        return savedMovies
-    }
 
+    fun getSavedMovies(): List<Movie> = savedMovies
 }
