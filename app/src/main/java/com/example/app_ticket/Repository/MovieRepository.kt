@@ -8,9 +8,14 @@ class MovieRepository {
 
     fun getMovies(): List<Movie> {
         return listOf(
-            Movie(1, "Inception", "https://..."),
-            Movie(2, "Interstellar", "https://..."),
-            Movie(3, "Dunkirk", "https://...")
+            Movie(
+                1, "Inception", "https://...", overview = "2.3",
+                vote_average = 2.4,
+            ),
+            Movie(2, "Interstellar", "https://...", overview = "2.3",
+                vote_average = 2.4,),
+            Movie(3, "Dunkirk", "https://...", overview = "2.3",
+                vote_average = 2.4,)
         )
     }
 

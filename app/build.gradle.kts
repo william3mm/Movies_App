@@ -1,3 +1,5 @@
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -57,6 +59,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx.v280)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
+    implementation(libs.retrofit.v2110)
+    implementation(libs.converter.gson.v2110)
+
     implementation(platform(libs.androidx.compose.bom.v20240600))
     implementation(libs.androidx.compose.foundation)
 
