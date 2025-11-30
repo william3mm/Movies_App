@@ -1,10 +1,15 @@
-package com.example.app_ticket.Models
+package com.example.app_ticket.View
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.app_ticket.Models.Movie
 import com.example.app_ticket.Repository.MovieRepository
+import kotlinx.coroutines.launch
+
+
 
 class MovieViewModel(
     private val repository: MovieRepository = MovieRepository()
@@ -22,7 +27,9 @@ class MovieViewModel(
     }
 
     fun loadMovies() {
-        movies = repository.getMovies()
+        viewModelScope.launch {
+            movies = repository.getMovies()
+        }
     }
 
     fun loadSavedMovies() {
@@ -38,4 +45,5 @@ class MovieViewModel(
         repository.removeMovie(movie)
         loadSavedMovies()
     }
+
 }
