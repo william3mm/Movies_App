@@ -4,20 +4,29 @@ import com.example.app_ticket.Constants.Constants
 import com.example.app_ticket.Models.Movie
 import com.example.app_ticket.Service.MovieResponse
 import com.example.app_ticket.Service.RetrofitInstance
+import com.example.app_ticket.Interface.MovieDao
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-object MovieRepository {
+class MovieRepository(
+    private val movieDao: MovieDao
+) {
 
-    private val savedMovies = mutableListOf<Movie>()
     private val apiKey = Constants.API_KEY
     private val firestore = FirebaseFirestore.getInstance()
     private val collectionName = "saved_movies"
 
-    suspend fun getMovies(): List<Movie> = try {
+    fun getSavedMovies(): Flow<List<Movie>> =
+        movieDao.getAllMovies()
+
+    suspend fun fetchMoviesFromApi(): List<Movie> = try {
         withContext(Dispatchers.IO) {
-            val response: MovieResponse = RetrofitInstance.api.getPopularMovies(apiKey)
+            val response: MovieResponse =
+                RetrofitInstance.api.getPopularMovies(apiKey)
+
+            movieDao.insertAll(response.results)
             response.results
         }
     } catch (e: Exception) {
@@ -25,27 +34,23 @@ object MovieRepository {
         emptyList()
     }
 
-    fun saveMovie(movie: Movie) {
-        if (!savedMovies.contains(movie)) {
-            savedMovies.add(movie)
+    suspend fun saveMovie(movie: Movie) {
+        withContext(Dispatchers.IO) {
+            movieDao.insert(movie)
 
-            // Salvar no Firebase
             firestore.collection(collectionName)
                 .document(movie.id.toString())
                 .set(movie)
-                .addOnSuccessListener {
-                    println("Filme salvo no Firebase: ${movie.title}")
-                }
-                .addOnFailureListener { e ->
-                    println("Erro ao salvar no Firebase: ${e.message}")
-                }
         }
     }
 
-    fun removeMovie(movie: Movie) {
-        savedMovies.remove(movie)
+    suspend fun removeMovie(movie: Movie) {
+        withContext(Dispatchers.IO) {
+            movieDao.delete(movie)
+
+            firestore.collection(collectionName)
+                .document(movie.id.toString())
+                .delete()
+        }
     }
-
-    fun getSavedMovies(): List<Movie> = savedMovies
-
 }

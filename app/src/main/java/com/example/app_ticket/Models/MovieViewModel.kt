@@ -1,44 +1,53 @@
 package com.example.app_ticket.View
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_ticket.Models.Movie
 import com.example.app_ticket.Repository.MovieRepository
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class MovieViewModel : ViewModel() {
+class MovieViewModel(
+    private val repository: MovieRepository
+) : ViewModel() {
 
-    var movies by mutableStateOf(listOf<Movie>())
-        private set
+    // Filmes vindos do Room
+    val savedMovies: StateFlow<List<Movie>> =
+        repository.getSavedMovies()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                emptyList()
+            )
 
-    var savedMovies by mutableStateOf(listOf<Movie>())
+    // Filmes carregados da API
+    var movies by mutableStateOf<List<Movie>>(emptyList())
         private set
 
     init {
-        loadMovies()
-        loadSavedMovies()
+        refreshMovies()
     }
 
-    fun loadMovies() {
+    fun refreshMovies() {
         viewModelScope.launch {
-            movies = MovieRepository.getMovies()
+            movies = repository.fetchMoviesFromApi()
         }
     }
 
-    fun loadSavedMovies() {
-        savedMovies = MovieRepository.getSavedMovies().toList()
-    }
-
     fun saveMovie(movie: Movie) {
-        MovieRepository.saveMovie(movie)
-        loadSavedMovies()
+        viewModelScope.launch {
+            repository.saveMovie(movie)
+        }
     }
 
     fun removeMovie(movie: Movie) {
-        MovieRepository.removeMovie(movie)
-        loadSavedMovies()
+        viewModelScope.launch {
+            repository.removeMovie(movie)
+        }
     }
 }
