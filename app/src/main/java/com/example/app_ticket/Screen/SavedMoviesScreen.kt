@@ -112,6 +112,7 @@ fun SavedMovieCard(
                             fontSize = 12.sp,
                             color = Color.White,
                             maxLines = 3
+
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
